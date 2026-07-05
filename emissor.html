@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Painel da Recepção - Emissor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; margin: 0; padding: 0 0 40px 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; user-select: none; -webkit-user-select: none; }
+        .cabecalho { background-color: #1f2937; color: white; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; box-sizing: border-box; }
+        .cabecalho-textos h1 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; }
+        .cabecalho-textos p { margin: 5px 0 0 0; font-size: 14px; font-weight: 600; color: #9ca3af; }
+        .btn-sair { background: #ef4444; color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-sair:hover { background: #dc2626; }
+        .container-botoes { width: 100%; max-width: 650px; padding: 0 15px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; }
+        .bloco-setor { background: white; padding: 20px 15px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid #e5e7eb; }
+        .titulo-setor { font-size: 20px; font-weight: 900; color: #374151; text-transform: uppercase; text-align: center; margin: 0 0 15px 0; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px; }
+        .total-aguardando { display: block; font-size: 14px; color: #ef4444; font-weight: 800; margin-top: 5px; text-transform: none; }
+        .grid-responsivo { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 600px) { .grid-responsivo { grid-template-columns: 1fr 1fr; } }
+        .box-botao { display: flex; flex-direction: column; gap: 8px; }
+        .btn-totem { padding: 20px 15px; border: none; border-radius: 12px; font-size: 28px; font-weight: 900; color: white; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.2; width: 100%; box-sizing: border-box; }
+        .btn-totem:active { transform: scale(0.96); }
+        .btn-totem span { font-size: 14px; font-weight: 600; opacity: 0.9; text-align: center; letter-spacing: 0.5px; }
+        .btn-prioridade { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-bottom: 5px solid #991b1b; } 
+        .btn-normal { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-bottom: 5px solid #1d4ed8; } 
+        .btn-unica { background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-bottom: 5px solid #047857; } 
+        .info-fila { background-color: #f9fafb; border: 1px solid #d1d5db; border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600; color: #4b5563; display: flex; flex-direction: column; gap: 5px; }
+        .linha-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e5e7eb; padding-bottom: 3px; }
+        .linha-info:last-child { border-bottom: none; padding-bottom: 0; }
+        .valor-destaque { font-weight: 900; font-size: 14px; color: #111827; }
+        .valor-proxima { color: #2563eb; } 
+        .valor-tv { color: #d97706; } 
+        .banner-offline { display: none; position: sticky; top: 0; width: 100%; background: #b91c1c; color: white; text-align: center; padding: 10px 15px; font-weight: 800; font-size: 14px; text-transform: uppercase; z-index: 999; box-sizing: border-box; }
+        .banner-offline.ativo { display: block; }
+        .banner-offline span.contador { background: rgba(255,255,255,0.25); border-radius: 20px; padding: 2px 10px; margin-left: 8px; }
+    </style>
+</head>
+<body>
+    <div class="banner-offline" id="banner-offline">
+        ⚠️ SEM CONEXÃO COM O SERVIDOR — Imprimindo localmente <span class="contador" id="contador-offline">0 pendentes</span>
+    </div>
+
+    <div class="cabecalho">
+        <div class="cabecalho-textos">
+            <h1>Emissor de Fichas</h1>
+            <p>Recepção</p>
+        </div>
+        <button class="btn-sair" onclick="window.location.href='index.html'">SAIR</button>
+    </div>
+
+    <div class="container-botoes">
+        <div class="bloco-setor">
+            <h2 class="titulo-setor">Regulação <span class="total-aguardando">Total Aguardando: <span id="total-REG">0</span></span></h2>
+            <div class="grid-responsivo">
+                <div class="box-botao">
+                    <button class="btn-totem btn-prioridade" onclick="emitirSenha('RP')">RP <span>Prioridade</span></button>
+                    <div class="info-fila">
+                        <div class="linha-info">Última Emitida: <span class="valor-destaque" id="ult-emit-RP">--</span></div>
+                        <div class="linha-info">Próxima será: <span class="valor-destaque valor-proxima" id="prox-emit-RP">RP 01</span></div>
+                        <div class="linha-info">Última na TV: <span class="valor-destaque valor-tv" id="ult-tv-RP">--</span></div>
+                    </div>
+                </div>
+                <div class="box-botao">
+                    <button class="btn-totem btn-normal" onclick="emitirSenha('R')">R <span>Normal</span></button>
+                    <div class="info-fila">
+                        <div class="linha-info">Última Emitida: <span class="valor-destaque" id="ult-emit-R">--</span></div>
+                        <div class="linha-info">Próxima será: <span class="valor-destaque valor-proxima" id="prox-emit-R">R 01</span></div>
+                        <div class="linha-info">Última na TV: <span class="valor-destaque valor-tv" id="ult-tv-R">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloco-setor">
+            <h2 class="titulo-setor">Complexidade <span class="total-aguardando">Total Aguardando: <span id="total-COMP">0</span></span></h2>
+            <div class="grid-responsivo">
+                <div class="box-botao">
+                    <button class="btn-totem btn-prioridade" onclick="emitirSenha('CP')">CP <span>Prioridade</span></button>
+                    <div class="info-fila">
+                        <div class="linha-info">Última Emitida: <span class="valor-destaque" id="ult-emit-CP">--</span></div>
+                        <div class="linha-info">Próxima será: <span class="valor-destaque valor-proxima" id="prox-emit-CP">CP 01</span></div>
+                        <div class="linha-info">Última na TV: <span class="valor-destaque valor-tv" id="ult-tv-CP">--</span></div>
+                    </div>
+                </div>
+                <div class="box-botao">
+                    <button class="btn-totem btn-normal" onclick="emitirSenha('C')">C <span>Normal</span></button>
+                    <div class="info-fila">
+                        <div class="linha-info">Última Emitida: <span class="valor-destaque" id="ult-emit-C">--</span></div>
+                        <div class="linha-info">Próxima será: <span class="valor-destaque valor-proxima" id="prox-emit-C">C 01</span></div>
+                        <div class="linha-info">Última na TV: <span class="valor-destaque valor-tv" id="ult-tv-C">--</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloco-setor">
+            <h2 class="titulo-setor">Autorização <span class="total-aguardando">Total Aguardando: <span id="total-AUT">0</span></span></h2>
+            <div class="box-botao">
+                <button class="btn-totem btn-unica" onclick="emitirSenha('AT')">AT <span>Fila Única</span></button>
+                <div class="info-fila">
+                    <div class="linha-info">Última Emitida: <span class="valor-destaque" id="ult-emit-AT">--</span></div>
+                    <div class="linha-info">Próxima será: <span class="valor-destaque valor-proxima" id="prox-emit-AT">AT 01</span></div>
+                    <div class="linha-info">Última na TV: <span class="valor-destaque valor-tv" id="ult-tv-AT">--</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <button onclick="confirmarReset()" style="background: #1f2937; color: #f87171; border: 2px solid #f87171; padding: 15px 30px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.2s;">
+            ⚠️ Resetar Sistema Completo
+        </button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+        const socket = io();
+        let bloqueado = false; 
+        let estaOnline = false; // assume offline até o primeiro 'connect' confirmar
+
+        let maxNumeros = { 'RP': 0, 'R': 0, 'CP': 0, 'C': 0, 'AT': 0 };
+        let ultimasEmitidas = { 'RP': '--', 'R': '--', 'CP': '--', 'C': '--', 'AT': '--' };
+        let ultimasTV = { 'RP': '--', 'R': '--', 'CP': '--', 'C': '--', 'AT': '--' };
+
+        const STORAGE_KEY = 'painel_estado';
+        const OFFLINE_QUEUE_KEY = 'fichas_offline_pendentes';
+
+        const mapeamentoSetoresLocal = { 'RP': 'Regulação', 'R': 'Regulação', 'CP': 'Complexidade', 'C': 'Complexidade', 'AT': 'Autorização' };
+
+        // =========================================================
+        // FILA OFFLINE (persistida, sobrevive a reload da página)
+        // =========================================================
+        function lerFilaOffline() {
+            try {
+                const raw = localStorage.getItem(OFFLINE_QUEUE_KEY);
+                const arr = raw ? JSON.parse(raw) : [];
+                return Array.isArray(arr) ? arr : [];
+            } catch (e) { return []; }
+        }
+        function salvarFilaOffline(fila) {
+            try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(fila)); } catch (e) {}
+        }
+        function atualizarBannerOffline() {
+            const fila = lerFilaOffline();
+            const banner = document.getElementById('banner-offline');
+            const contador = document.getElementById('contador-offline');
+            contador.innerText = `${fila.length} pendente${fila.length === 1 ? '' : 's'}`;
+            banner.classList.toggle('ativo', !estaOnline || fila.length > 0);
+        }
+
+        // =========================================================
+        // COMUNICAÇÃO COM O MOTOR LOCAL NO WINDOWS 7
+        // =========================================================
+        function enviarParaImpressoraFisica(ficha, setor, fila, horaISO) {
+            let ehPrioridade = fila && fila.endsWith('P');
+            let tipo = ehPrioridade ? "PRIORIDADE" : "NORMAL";
+            let linhaSetor = (setor === 'Autorização' || fila === 'AT') ? setor.toUpperCase() : `${setor.toUpperCase()} ${tipo}`;
+            let horaPerfeita = new Date(horaISO).toLocaleString('pt-BR');
+
+            let payload = { ficha: ficha, setorFormatado: linhaSetor, hora: horaPerfeita };
+
+            fetch('http://127.0.0.1:3001/imprimir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(err => console.error("Aviso: Motor local desligado ou impressora offline.", err));
+        }
+
+        socket.on('comando_imprimir_senha', (dadosDaSenha) => {
+            enviarParaImpressoraFisica(dadosDaSenha.ficha, dadosDaSenha.setor, dadosDaSenha.fila, dadosDaSenha.horarioEmissao);
+        });
+
+        // =========================================================
+        // MOTOR DE EMISSÃO — ONLINE (fluxo normal, servidor numera e imprime)
+        // =========================================================
+        function emitirSenhaOnline(siglaFila) {
+            socket.emit('adicionar_ficha', { filaOpcao: siglaFila, nome: '' });
+            const contadorAtual = maxNumeros[siglaFila] || 0;
+            ultimasEmitidas[siglaFila] = `${siglaFila} ${(contadorAtual + 1).toString().padStart(2, '0')}`;
+        }
+
+        // =========================================================
+        // MOTOR DE EMISSÃO — OFFLINE (numera e imprime localmente,
+        // sincroniza com o servidor quando a conexão voltar)
+        // =========================================================
+        function emitirSenhaOffline(siglaFila) {
+            const numero = (maxNumeros[siglaFila] || 0) + 1;
+            maxNumeros[siglaFila] = numero;
+            const codigoFicha = `${siglaFila} ${numero.toString().padStart(2, '0')}`;
+            const agora = new Date().toISOString();
+
+            const novaFicha = {
+                id: `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                ficha: codigoFicha,
+                nome: '',
+                setor: mapeamentoSetoresLocal[siglaFila] || 'Regulação',
+                fila: siglaFila,
+                horarioEmissao: agora
+            };
+
+            // Imprime imediatamente — não espera o servidor, porque ele está inacessível
+            enviarParaImpressoraFisica(novaFicha.ficha, novaFicha.setor, novaFicha.fila, novaFicha.horarioEmissao);
+
+            const fila = lerFilaOffline();
+            fila.push(novaFicha);
+            salvarFilaOffline(fila);
+            atualizarBannerOffline();
+
+            ultimasEmitidas[siglaFila] = codigoFicha;
+            document.getElementById(`prox-emit-${siglaFila}`).innerText = `${siglaFila} ${(numero + 1).toString().padStart(2, '0')}`;
+            document.getElementById(`ult-emit-${siglaFila}`).innerText = codigoFicha;
+        }
+
+        function emitirSenha(siglaFila) {
+            if (bloqueado) return;
+            bloqueado = true;
+
+            if (estaOnline) {
+                emitirSenhaOnline(siglaFila);
+            } else {
+                emitirSenhaOffline(siglaFila);
+            }
+
+            setTimeout(() => { bloqueado = false; }, 500);
+        }
+
+        // =========================================================
+        // SINCRONIZAÇÃO: envia fichas offline pro servidor quando a
+        // conexão volta, sem reimprimir (já foram impressas na hora)
+        // =========================================================
+        function sincronizarFilaOffline() {
+            const fila = lerFilaOffline();
+            if (fila.length === 0) { atualizarBannerOffline(); return; }
+
+            fila.forEach(ficha => {
+                socket.emit('sincronizar_ficha_offline', ficha, (resposta) => {
+                    if (resposta && resposta.ok) {
+                        const restante = lerFilaOffline().filter(f => f.id !== ficha.id);
+                        salvarFilaOffline(restante);
+                        atualizarBannerOffline();
+                    }
+                    // Se o servidor não confirmar, a ficha continua na fila local
+                    // e será tentada novamente na próxima reconexão.
+                });
+            });
+        }
+
+        // =========================================================
+        // RESTAURADORES E ATUALIZADORES 
+        // =========================================================
+        function salvarEstadoLocal(estado) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(estado)); } catch (e) {}
+        }
+        function estadoLocalRestauravel(estado) { return estado && Array.isArray(estado.filaPacientes); }
+        function obterEstadoLocal() {
+            try { return estadoLocalRestauravel(JSON.parse(localStorage.getItem(STORAGE_KEY))) ? JSON.parse(localStorage.getItem(STORAGE_KEY)) : null; } catch (e) { return null; }
+        }
+
+        socket.on('connect', () => {
+            estaOnline = true;
+            atualizarBannerOffline();
+            sincronizarFilaOffline();
+        });
+
+        socket.on('disconnect', () => {
+            estaOnline = false;
+            atualizarBannerOffline();
+        });
+
+        socket.on('estado_servidor', (estado) => {
+            if (estado && estado.contadores && socket.connected) {
+                salvarEstadoLocal(estado);
+                Object.keys(estado.contadores).forEach(key => {
+                    maxNumeros[key] = estado.contadores[key] - 1;
+                    const proxEl = document.getElementById(`prox-emit-${key}`);
+                    if (proxEl) proxEl.innerText = `${key} ${(estado.contadores[key]).toString().padStart(2, '0')}`;
+                });
+                
+                // MÁGICA: FILTRO EXATO POR SIGLA NA TV
+                if (estado.ultimosChamados) {
+                    ['RP','R','CP','C','AT'].forEach(sigla => {
+                        const setor = sigla === 'AT' ? 'Autorização' : (sigla === 'RP' || sigla === 'R' ? 'Regulação' : 'Complexidade');
+                        let chamadoNaTV = '--';
+                        
+                        if (estado.ultimosChamados[setor]) {
+                            const fichaCorreta = estado.ultimosChamados[setor].find(chamada => chamada.ficha && chamada.ficha.startsWith(sigla + ' '));
+                            
+                            if (fichaCorreta) {
+                                chamadoNaTV = fichaCorreta.ficha;
+                            }
+                        }
+                        
+                        const el = document.getElementById(`ult-tv-${sigla}`);
+                        if (el) el.innerText = chamadoNaTV;
+                        ultimasTV[sigla] = chamadoNaTV;
+                    });
+                }
+            }
+        });
+
+        socket.on('atualizar_fila', (filaGlobal) => {
+            if (!socket.connected) return; 
+            
+            let totalReg = 0, totalComp = 0, totalAut = 0;
+            filaGlobal.forEach(p => {
+                if (p.status === 'LOBBY') {
+                    if (p.fila === 'RP' || p.fila === 'R') totalReg++;
+                    else if (p.fila === 'CP' || p.fila === 'C') totalComp++;
+                    else if (p.fila === 'AT') totalAut++;
+                }
+                const split = p.ficha ? p.ficha.split(' ') : [];
+                if (split.length > 1) {
+                    const num = parseInt(split[1], 10);
+                    if (!isNaN(num) && num > (maxNumeros[p.fila] || 0)) maxNumeros[p.fila] = num;
+                }
+            });
+
+            document.getElementById('total-REG').innerText = totalReg;
+            document.getElementById('total-COMP').innerText = totalComp;
+            document.getElementById('total-AUT').innerText = totalAut;
+
+            ['RP', 'R', 'CP', 'C', 'AT'].forEach(sigla => {
+                document.getElementById(`prox-emit-${sigla}`).innerText = `${sigla} ${(maxNumeros[sigla] + 1).toString().padStart(2, '0')}`;
+                document.getElementById(`ult-emit-${sigla}`).innerText = ultimasEmitidas[sigla] || '--';
+            });
+        });
+
+        socket.on('solicitar_estado_cliente', () => { const est = obterEstadoLocal(); if (est) socket.emit('resposta_estado_cliente', est); });
+        socket.on('reconnect', () => { const est = obterEstadoLocal(); if (est) socket.emit('resposta_estado_cliente', est); });
+        
+        // Atualiza a visualização da TV em tempo real
+        socket.on('tocar_chamada_tv', (dados) => { 
+            try { 
+                const sigla = dados.ficha.split(' ')[0]; 
+                if (ultimasTV[sigla] !== undefined) { 
+                    ultimasTV[sigla] = dados.ficha; 
+                    document.getElementById(`ult-tv-${sigla}`).innerText = dados.ficha; 
+                } 
+            } catch (e) {} 
+        });
+
+        socket.on('sistema_resetado', () => {
+            maxNumeros = { 'RP': 0, 'R': 0, 'CP': 0, 'C': 0, 'AT': 0 };
+            ultimasEmitidas = { 'RP': '--', 'R': '--', 'CP': '--', 'C': '--', 'AT': '--' };
+            ['RP', 'R', 'CP', 'C', 'AT'].forEach(sigla => { document.getElementById(`ult-emit-${sigla}`).innerText = '--'; document.getElementById(`prox-emit-${sigla}`).innerText = `${sigla} 01`; document.getElementById(`ult-tv-${sigla}`).innerText = '--'; });
+            alert("Sistema reiniciado com sucesso!");
+        });
+
+        function confirmarReset() { if (confirm("Isso apagará TODAS as fichas, zerará contadores e limpará a TV. Continuar?")) socket.emit('resetar_sistema'); }
+
+        // Mostra o estado do banner assim que a página carrega
+        atualizarBannerOffline();
+    </script>
+</body>
+</html>

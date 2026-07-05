@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle da Porta - Central de Regulação</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: #f3f4f6; 
+            margin: 0; 
+            padding: 20px 20px 80px 20px;
+        }
+
+        /* Cabeçalho agora com a mesma cor das abas (#1f2937) */
+        .header { 
+            background: #1f2937; 
+            color: white; 
+            padding: 15px 30px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .media-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+        }
+        .media-item {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #111827;
+        }
+        .media-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #6b7280;
+        }
+        .media-value {
+            font-size: 26px;
+            font-weight: 900;
+            color: #111827;
+        }
+        .header-titulo { font-size: 22px; font-weight: 800; text-transform: uppercase; }
+        
+        .btn-sair {
+            background: #ef4444; color: white; border: none; padding: 10px 25px; 
+            border-radius: 6px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 14px;
+        }
+        .btn-sair:hover { background: #dc2626; }
+
+        .setor-container { 
+            background: white; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+        }
+        
+        /* Cursor pointer adicionado para indicar que é clicável (aba) */
+        .setor-header { 
+            background: #1f2937; 
+            color: white; 
+            padding: 15px 25px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .info-setor {
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .info-setor-titulo { font-weight: 800; font-size: 18px; }
+
+        .metricas-setor {
+            font-size: 14px; font-weight: 600; color: #fbbf24;
+            display: flex; gap: 15px;
+        }
+
+        .btn-chamar-fila { 
+            background: #10b981;
+            color: white; border: none; padding: 12px 25px; border-radius: 8px; 
+            font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-chamar-fila:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
+        .btn-chamar-fila:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        /* Lógica das abas (Sanfona) */
+        .setor-content { padding: 25px; background: #ffffff; display: none; }
+        .setor-content.ativo { display: block; }
+        
+        .fila-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .lista-coluna { background: #f9fafb; padding: 15px; border-radius: 10px; border: 2px solid #e5e7eb; }
+        
+        .titulo-prioridade { color: #d32f2f; border-bottom: 3px solid #d32f2f; padding-bottom: 8px; margin-bottom: 15px; font-weight: 900; text-align: center; text-transform: uppercase;}
+        .titulo-normal { color: #2563eb; border-bottom: 3px solid #2563eb; padding-bottom: 8px; margin-bottom: 15px; font-weight: 900; text-align: center; text-transform: uppercase;}
+        /* Título para a Autorização */
+        .titulo-unica { color: #10b981; border-bottom: 3px solid #10b981; padding-bottom: 8px; margin-bottom: 15px; font-weight: 900; text-align: center; text-transform: uppercase;}
+        
+        .item-ficha { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: white; padding: 12px 15px; border-radius: 8px; 
+            border: 1px solid #d1d5db; margin-bottom: 8px; font-weight: 900; font-size: 18px;
+            color: #111827;
+        }
+        .tempo-ficha { font-size: 12px; color: #6b7280; font-weight: 600; margin-top: 4px; }
+        
+        .btn-excluir { 
+            background: #fee2e2; color: #ef4444; border: 1px solid #f87171; 
+            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 800; transition: 0.2s;
+        }
+        .btn-excluir:hover { background: #ef4444; color: white; }
+        
+        .rodape { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: #111827; color: white; padding: 15px 30px; 
+            display: flex; justify-content: center; box-sizing: border-box; 
+            font-size: 18px;
+        }
+        .metrica-total { font-weight: 800; }
+        .metrica-total span { color: #34d399; font-size: 22px; margin-left: 10px;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-titulo">Controle da Porta</div>
+        <button class="btn-sair" onclick="window.location.href='index.html'">SAIR</button>
+    </div>
+
+    <div class="media-panel">
+        <div class="media-item">
+            <div class="media-title">Média Regulação</div>
+            <div class="media-value" id="media-regulacao">0 min</div>
+        </div>
+        <div class="media-item">
+            <div class="media-title">Média Complexidade</div>
+            <div class="media-value" id="media-complexidade">0 min</div>
+        </div>
+        <div class="media-item">
+            <div class="media-title">Média Autorização</div>
+            <div class="media-value" id="media-autorizacao">0 min</div>
+        </div>
+    </div>
+
+    <div id="container-setores"></div>
+    <div class="rodape">
+        <div class="metrica-total">Total Aguardando Geral: <span id="total-pacientes">0</span></div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let tvOcupadaGlobal = false;
+        let filaCache = [];
+        let abasAbertas = new Set(); // Guarda quais abas estão abertas
+
+        const STORAGE_KEY = 'painel_estado';
+
+        function salvarEstadoLocal(estado) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+            } catch (error) {
+                console.warn('Falha ao salvar estado local:', error);
+            }
+        }
+
+        function estadoLocalSalvavel(estado) {
+            return estado
+                && Array.isArray(estado.filaPacientes)
+                && estado.contadores && typeof estado.contadores === 'object'
+                && estado.turnos && typeof estado.turnos === 'object'
+                && estado.ultimosChamados && typeof estado.ultimosChamados === 'object';
+        }
+
+        function estadoLocalRestauravel(estado) {
+            if (!estadoLocalSalvavel(estado)) return false;
+            return estado.filaPacientes.length > 0
+                || estado.contadores.RP > 1 || estado.contadores.R > 1 || estado.contadores.CP > 1 || estado.contadores.C > 1 || estado.contadores.AT > 1
+                || estado.turnos.REGULACAO !== 'P' || estado.turnos.COMPLEXIDADE !== 'P' || estado.turnos.AUTORIZACAO !== 'P';
+        }
+
+        function obterEstadoLocal() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const estado = JSON.parse(raw);
+                return estadoLocalRestauravel(estado) ? estado : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        socket.on('estado_servidor', (estado) => {
+            if (estadoLocalSalvavel(estado)) {
+                salvarEstadoLocal(estado);
+            }
+        });
+
+        socket.on('solicitar_estado_cliente', () => {
+            const estado = obterEstadoLocal();
+            if (estado) {
+                console.log('📤 Enviando estado para servidor');
+                socket.emit('resposta_estado_cliente', estado);
+            }
+        });
+
+        socket.on('reconnect', () => {
+            console.log('🔗 Reconectado ao servidor');
+            const estado = obterEstadoLocal();
+            if (estado) {
+                socket.emit('resposta_estado_cliente', estado);
+            }
+        });
+
+        socket.on('atualizar_media_setores', (media) => {
+            document.getElementById('media-regulacao').innerText = `${media.REGULACAO} min`;
+            document.getElementById('media-complexidade').innerText = `${media.COMPLEXIDADE} min`;
+            document.getElementById('media-autorizacao').innerText = `${media.AUTORIZACAO} min`;
+        });
+
+        socket.on('bloqueio_tv_ocupada', () => { tvOcupadaGlobal = true; renderizar(); });
+        socket.on('liberar_botoes_tv_livre', () => { tvOcupadaGlobal = false; renderizar(); });
+
+        socket.on('atualizar_fila', (filaGlobal) => {
+            filaCache = filaGlobal;
+            renderizar();
+        });
+
+        // Atualiza a contagem dos minutos a cada 60 segundos
+        setInterval(renderizar, 60000);
+
+        function formatarTempo(ms) {
+            const min = Math.floor(ms / 60000);
+            if (min < 0) return '0 min';
+            if (min < 60) return `${min} min`;
+            return `${Math.floor(min/60)}h ${min%60}min`;
+        }
+
+        // Função para abrir/fechar as abas
+        function toggleAba(setorId) {
+            if (abasAbertas.has(setorId)) {
+                abasAbertas.delete(setorId);
+            } else {
+                abasAbertas.add(setorId);
+            }
+            renderizar();
+        }
+
+        function renderizar() {
+            const setores = [
+                { nome: 'Regulação', id: 'REGULACAO' },
+                { nome: 'Complexidade', id: 'COMPLEXIDADE' },
+                { nome: 'Autorização', id: 'AUTORIZACAO' }
+            ];
+            const container = document.getElementById('container-setores');
+            container.innerHTML = '';
+            let total = 0;
+
+            setores.forEach(s => {
+                const fichas = filaCache.filter(f => f.setor === s.nome && (f.status === 'LOBBY' || !f.status));
+                total += fichas.length;
+
+                let tempoMaiorEspera = '0 min';
+                if (fichas.length > 0) {
+                    const maisAntigo = Math.min(...fichas.map(f => Number(f.id)));
+                    tempoMaiorEspera = formatarTempo(Date.now() - maisAntigo);
+                }
+
+                // Verifica se essa aba deveria estar aberta
+                const estaAberta = abasAbertas.has(s.id);
+                const classeAtivo = estaAberta ? 'ativo' : '';
+                const iconeSeta = estaAberta ? '▲' : '▼';
+
+                // Lógica de Separação (Autorização é lista única)
+                let conteudoFilas = '';
+                if (s.id === 'AUTORIZACAO') {
+                    conteudoFilas = `
+                        <div class="lista-coluna" style="grid-column: span 2;">
+                            <div class="titulo-unica">Fila de Autorização</div>
+                            ${renderizarLista(fichas)}
+                        </div>
+                    `;
+                } else {
+                    conteudoFilas = `
+                        <div class="lista-coluna">
+                            <div class="titulo-prioridade">Prioridade</div>
+                            ${renderizarLista(fichas.filter(f => f.fila.endsWith('P')))}
+                        </div>
+                        <div class="lista-coluna">
+                            <div class="titulo-normal">Normal</div>
+                            ${renderizarLista(fichas.filter(f => !f.fila.endsWith('P')))}
+                        </div>
+                    `;
+                }
+
+                container.innerHTML += `
+                    <div class="setor-container">
+                        <div class="setor-header" onclick="toggleAba('${s.id}')">
+                            <div class="info-setor">
+                                <span class="info-setor-titulo">${s.nome} ${iconeSeta}</span>
+                                <div class="metricas-setor">
+                                    <span>⏳ Aguardando: ${fichas.length}</span>
+                                    <span>⏱️ Maior tempo de espera: ${tempoMaiorEspera}</span>
+                                </div>
+                            </div>
+                            <button class="btn-chamar-fila" ${tvOcupadaGlobal || fichas.length === 0 ? 'disabled' : ''} onclick="event.stopPropagation(); chamarComoBotoeira('${s.id}')">
+                                CHAMAR PRÓXIMO
+                            </button>
+                        </div>
+                        <div class="setor-content ${classeAtivo}">
+                            <div class="fila-grid">
+                                ${conteudoFilas}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('total-pacientes').innerText = total;
+        }
+
+        // Função de lista sem Nomes
+        function renderizarLista(fichas) {
+            if(fichas.length === 0) return `<div style="text-align:center; color:#9ca3af; padding: 10px; font-weight:700;">Vazia</div>`;
+            return fichas.map(f => `
+                <div class="item-ficha">
+                    <div>
+                        ${f.ficha}
+                        <div class="tempo-ficha">Em espera: ${formatarTempo(Date.now() - Number(f.id))}</div>
+                    </div>
+                    <button class="btn-excluir" onclick="excluir('${f.id}')">X</button>
+                </div>
+            `).join('');
+        }
+
+        // Botoeira que avisa o servidor
+        function chamarComoBotoeira(setorId) {
+            if (tvOcupadaGlobal) return;
+            socket.emit('chamar_para_atendimento', setorId);
+        }
+
+        // Excluir ficha
+        function excluir(id) { 
+            if(confirm("Deseja realmente remover esta ficha?")) { 
+                socket.emit('excluir_ficha', id); 
+            } 
+        }
+    </script>
+</body>
+</html>

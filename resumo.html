@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BI Avançado - Regulação Ártemis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --c-red: #E63946; --c-red-light: #EC9A9A;
+            --c-mint-light: #F1FAEE; --c-mint: #CDEAE5;
+            --c-cyan: #A8DADC; --c-blue-light: #77ABBD;
+            --c-blue: #457B9D; --c-blue-dark: #31587A;
+            --c-navy: #1D3557; --c-navy-dark: #324766;
+            --bg-body: #f3f4f6; --bg-card: #ffffff; 
+            --text-main: #1D3557; --text-muted: #77ABBD;
+            --border-light: #e5e7eb; --sidebar-w: 280px;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--c-blue-light); border-radius: 10px; }
+        
+        /* SIDEBAR */
+        .sidebar { width: var(--sidebar-w); background: var(--bg-card); display: flex; flex-direction: column; padding: 30px 20px; border-right: 1px solid var(--border-light); flex-shrink: 0; }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; padding-left: 10px; }
+        .sidebar-brand i { font-size: 32px; color: var(--c-navy); }
+        .sidebar-brand h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-navy); }
+        
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 14px; font-weight: 600; color: var(--text-muted); border-radius: 16px; transition: all 0.2s ease; }
+        .nav-item:hover { background: var(--c-mint-light); color: var(--c-blue); }
+        .nav-item.active { background: var(--c-navy); color: #ffffff; box-shadow: 0 10px 15px -3px rgba(29, 53, 87, 0.3); }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 40px 50px; overflow-y: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header-title h1 { font-size: 32px; font-weight: 800; color: var(--c-navy); letter-spacing: -1px; }
+        
+        .filtro-data-container { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 16px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid var(--border-light); }
+        .filtro-data-container label { font-weight: 700; color: var(--c-navy); font-size: 14px; }
+        .filtro-data-container select { border: none; font-weight: 600; color: var(--text-muted); font-size: 15px; outline: none; cursor: pointer; background: transparent; }
+
+        /* MESA DE OPERAÇÕES BI */
+        .bi-controls { background: var(--bg-card); padding: 20px 25px; border-radius: 20px; margin-bottom: 25px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border-light); }
+        
+        .control-group { display: flex; align-items: center; gap: 12px; }
+        .control-label { font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
+        
+        .toggle-btn { display: none; }
+        .toggle-label { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s; border: 2px solid transparent; display: flex; align-items: center; gap: 6px; }
+        
+        #lbl-chegadas { background: #f1f5f9; color: #64748b; }
+        #tgl-chegadas:checked + #lbl-chegadas { background: #e0f2fe; color: #0284c7; border-color: #7dd3fc; }
+        
+        #lbl-saidas { background: #f1f5f9; color: #64748b; }
+        #tgl-saidas:checked + #lbl-saidas { background: var(--c-mint-light); color: #059669; border-color: #6ee7b7; }
+        
+        #lbl-faltas { background: #f1f5f9; color: #64748b; }
+        #tgl-faltas:checked + #lbl-faltas { background: #fee2e2; color: #e11d48; border-color: #fda4af; }
+
+        .select-bi { padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border-light); font-weight: 700; color: var(--c-navy); background: #f8fafc; cursor: pointer; outline: none; font-size: 14px; }
+        .select-bi:hover { border-color: var(--c-blue-light); }
+
+        /* KPIs */
+        .kpi-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 30px; }
+        .kpi-card { background: var(--bg-card); padding: 25px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: center; }
+        .kpi-dark { background: linear-gradient(135deg, var(--c-navy-dark) 0%, var(--c-navy) 100%); color: white; box-shadow: 0 10px 20px rgba(29, 53, 87, 0.2); }
+        .kpi-dark .kpi-title { color: var(--c-cyan); }
+        .kpi-title { font-size: 14px; color: var(--text-muted); font-weight: 600; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .kpi-value { font-size: 38px; font-weight: 800; color: var(--c-navy); display: flex; align-items: baseline; gap: 6px; letter-spacing: -1px; }
+        .kpi-sub { font-size: 16px; font-weight: 600; color: var(--text-muted); }
+        .trend-badge { background: var(--c-mint-light); color: var(--c-blue); padding: 4px 8px; border-radius: 8px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; width: fit-content; }
+        .trend-badge.danger { background: #fee2e2; color: var(--c-red); }
+
+        /* GRAFICO MESTRE */
+        .panel { background: var(--bg-card); padding: 30px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 30px; }
+        .panel-header { font-size: 18px; font-weight: 800; color: var(--c-navy); margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .chart-wrapper { position: relative; height: 350px; width: 100%; }
+
+        /* TABELA */
+        .table-responsive { width: 100%; overflow-x: auto; }
+        .table-ops { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .table-ops th { text-align: left; padding-bottom: 15px; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid var(--border-light); }
+        .table-ops td { padding: 15px 0; border-bottom: 1px solid var(--bg-body); color: var(--c-navy); font-weight: 600; font-size: 15px; }
+        
+        .table-ops tfoot td { padding: 20px 0 10px 0; border-top: 2px solid var(--border-light); font-size: 16px; color: var(--c-navy-dark); font-weight: 800; }
+        
+        .op-name-wrapper { display: flex; align-items: center; gap: 10px; }
+        .op-avatar { width: 35px; height: 35px; background: var(--c-mint-light); color: var(--c-blue); border-radius: 50%; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .status-pill-light { background: var(--c-mint); color: var(--c-navy); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .status-pill-danger { background: #fee2e2; color: var(--c-red); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; border: 1px solid #fca5a5; }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-brand"><i class="ph-fill ph-infinity"></i><h2>Ártemis BI</h2></div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="mudarAba('Geral', this)">Geral</div>
+            <div class="nav-item" onclick="mudarAba('Regulação', this)">Regulação</div>
+            <div class="nav-item" onclick="mudarAba('Complexidade', this)">Complexidade</div>
+            <div class="nav-item" onclick="mudarAba('Autorização', this)">Autorização</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="header-title"><h1 id="titulo-aba">Geral</h1></div>
+            <div class="filtro-data-container">
+                <label for="select-data"><i class="ph-bold ph-calendar-blank"></i> Dia:</label>
+                <select id="select-data" onchange="processarDadosBI()"></select>
+            </div>
+        </div>
+
+        <div class="bi-controls">
+            <div class="control-group">
+                <span class="control-label">Camadas</span>
+                <input type="checkbox" id="tgl-chegadas" class="toggle-btn" onchange="processarDadosBI()">
+                <label for="tgl-chegadas" class="toggle-label" id="lbl-chegadas"><i class="ph-bold ph-ticket"></i> Emissões</label>
+
+                <input type="checkbox" id="tgl-saidas" class="toggle-btn" checked onchange="processarDadosBI()">
+                <label for="tgl-saidas" class="toggle-label" id="lbl-saidas"><i class="ph-bold ph-check-circle"></i> Vazão</label>
+
+                <input type="checkbox" id="tgl-faltas" class="toggle-btn" onchange="processarDadosBI()">
+                <label for="tgl-faltas" class="toggle-label" id="lbl-faltas"><i class="ph-bold ph-x-circle"></i> Faltas</label>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Recorte de Tempo</span>
+                <select id="select-inicio" class="select-bi" onchange="processarDadosBI()">
+                    <option value="6">06:00</option><option value="7" selected>07:00</option><option value="8">08:00</option>
+                    <option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option>
+                    <option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option>
+                    <option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option>
+                </select>
+                <span style="font-weight: 700; color: var(--text-muted);">até</span>
+                <select id="select-fim" class="select-bi" onchange="processarDadosBI()">
+                    <option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option>
+                    <option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option>
+                    <option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option>
+                    <option value="17">17:00</option><option value="18" selected>18:00</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <span class="control-label">Precisão</span>
+                <select id="select-precisao" class="select-bi" onchange="processarDadosBI()">
+                    <option value="10">10 em 10 Min</option>
+                    <option value="30" selected>30 em 30 Min</option>
+                    <option value="60">1 em 1 Hora</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="kpi-container">
+            <div class="kpi-card kpi-dark">
+                <div class="kpi-title">Atendimentos no Período</div>
+                <div class="kpi-value"><span id="kpi-atendidos-periodo">0</span></div>
+                <div class="trend-badge" style="background: rgba(255,255,255,0.2); color: white;">Filtro Aplicado</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-title">Absenteísmo (Estatístico)</div>
+                <div class="kpi-value" style="color: var(--c-red);">
+                    <span id="kpi-absenteismo-media">0</span>
+                    <span class="kpi-sub" style="color: var(--c-red-light);">% &plusmn; <span id="kpi-absenteismo-desvio">0</span>%</span>
+                </div>
+                <div class="trend-badge danger">Margem (Desvio Padrão)</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Diagnóstico de Fluxo Dinâmico</div>
+            <div class="chart-wrapper">
+                <canvas id="graficoMestre"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Auditoria por Operador</div>
+            <div class="table-responsive">
+                <table class="table-ops">
+                    <thead>
+                        <tr>
+                            <th>Operador</th>
+                            <th>Setor</th>
+                            <th>Total Atendido</th>
+                            <th>Espera Média dos Pacientes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-operadores"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" style="text-align: right;">TOTAL DO SETOR NO PERÍODO:</td>
+                            <td><span class="status-pill-light" id="tabela-total-atendidos" style="font-size: 14px;">0 pacs</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let dadosHistorico = [];
+        let chartMestre = null;
+        let abaAtual = 'Geral';
+        
+        function obterDataHojeLocal() {
+            const objData = new Date();
+            const ano = objData.getFullYear();
+            const mes = String(objData.getMonth() + 1).padStart(2, '0');
+            const dia = String(objData.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+        let dataReferenciaHoje = obterDataHojeLocal();
+
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        socket.on('connect', () => { socket.emit('pedir_dados_auditoria'); });
+
+        socket.on('novo_registro_auditoria', (novoRegistro) => {
+            if (!novoRegistro) return;
+            dadosHistorico.push(novoRegistro);
+            atualizarSeletorDeDatas();
+            processarDadosBI();
+        });
+        
+        socket.on('receber_dados_auditoria', (historico) => { 
+            dadosHistorico = historico || []; 
+            atualizarSeletorDeDatas();
+            processarDadosBI(); 
+        });
+
+        function mudarAba(setor, elemento) {
+            abaAtual = setor;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            elemento.classList.add('active');
+            document.getElementById('titulo-aba').innerText = setor === 'Geral' ? 'Geral' : setor;
+            processarDadosBI();
+        }
+
+        function atualizarSeletorDeDatas() {
+            const seletor = document.getElementById('select-data');
+            const dataAtualSelecionada = seletor.value;
+            const datasUnicas = new Set();
+            datasUnicas.add(dataReferenciaHoje);
+
+            dadosHistorico.forEach(item => { if(item.data) datasUnicas.add(item.data); });
+
+            const datasOrdenadas = Array.from(datasUnicas).sort((a,b) => new Date(b) - new Date(a));
+            
+            seletor.innerHTML = '';
+            datasOrdenadas.forEach(data => {
+                const parts = data.split('-');
+                if(parts.length === 3) {
+                    const dataFormatada = data === dataReferenciaHoje ? `Hoje (${parts[2]}/${parts[1]})` : `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    const option = document.createElement('option');
+                    option.value = data; option.text = dataFormatada;
+                    seletor.appendChild(option);
+                }
+            });
+
+            if(dataAtualSelecionada && datasUnicas.has(dataAtualSelecionada)) seletor.value = dataAtualSelecionada;
+            else if (!dataAtualSelecionada) seletor.value = dataReferenciaHoje;
+        }
+
+        function gerarEixoX(horaInicio, horaFim, minutosSalto) {
+            const eixo = [];
+            let curH = horaInicio; let curM = 0;
+            while(curH < horaFim || (curH === horaFim && curM === 0)) {
+                eixo.push(`${curH.toString().padStart(2,'0')}:${curM.toString().padStart(2,'0')}`);
+                curM += minutosSalto;
+                if(curM >= 60) { curH++; curM -= 60; }
+            }
+            return eixo;
+        }
+
+        function encaixarNoBloco(isoString, horaInicio, horaFim, minutosSalto, eixoX) {
+            if(!isoString) return null;
+            const dataObj = new Date(isoString);
+            const totalMinutos = (dataObj.getHours() * 60) + dataObj.getMinutes();
+            
+            const inicioMinutos = horaInicio * 60;
+            const fimMinutos = horaFim * 60;
+
+            if(totalMinutos < inicioMinutos || totalMinutos > fimMinutos) return null;
+            
+            const offset = totalMinutos - inicioMinutos;
+            const indice = Math.floor(offset / minutosSalto);
+            
+            if(indice >= eixoX.length) return eixoX[eixoX.length - 1];
+            return eixoX[indice];
+        }
+
+        // CÁLCULO ESTATÍSTICO DE ABSENTEÍSMO (MÉDIA E DESVIO PADRÃO s)
+        function calcularEstatisticaAbsenteismo(minInicio, minFim) {
+            const diasHistorico = {};
+            let historicoRelevante = dadosHistorico;
+            if (abaAtual !== 'Geral') historicoRelevante = historicoRelevante.filter(i => i.setor === abaAtual);
+
+            // Filtra os dados aplicando a Lupa de Tempo para varrer o histórico inteiro
+            historicoRelevante.forEach(item => {
+                const dataHora = item.horaAtendimento || item.horaChegada;
+                if(!dataHora) return;
+                
+                const dObj = new Date(dataHora);
+                const minutosDia = (dObj.getHours() * 60) + dObj.getMinutes();
+
+                if(minutosDia >= minInicio && minutosDia <= minFim) {
+                    if(!diasHistorico[item.data]) diasHistorico[item.data] = { total: 0, faltas: 0 };
+                    
+                    if(item.resultado === 'atendido' || item.resultado === 'falta') {
+                        diasHistorico[item.data].total++;
+                        if(item.resultado === 'falta') diasHistorico[item.data].faltas++;
+                    }
+                }
+            });
+
+            const taxasDiarias = [];
+            Object.keys(diasHistorico).forEach(data => {
+                const dia = diasHistorico[data];
+                if(dia.total > 0) taxasDiarias.push((dia.faltas / dia.total) * 100);
+            });
+
+            if(taxasDiarias.length === 0) return { media: 0, desvio: 0 };
+
+            // Cálculo da Média
+            const media = taxasDiarias.reduce((a, b) => a + b, 0) / taxasDiarias.length;
+            
+            // Cálculo do Desvio Padrão Amostral (s)
+            let desvioPadrao = 0;
+            if(taxasDiarias.length > 1) {
+                const somaQuadrados = taxasDiarias.reduce((acc, val) => acc + Math.pow(val - media, 2), 0);
+                const variancia = somaQuadrados / (taxasDiarias.length - 1);
+                desvioPadrao = Math.sqrt(variancia);
+            }
+
+            return {
+                media: Math.round(media),
+                desvio: Math.round(desvioPadrao)
+            };
+        }
+
+        function processarDadosBI() {
+            if(!document.getElementById('select-data').value) return; 
+
+            const verChegadas = document.getElementById('tgl-chegadas').checked;
+            const verSaidas = document.getElementById('tgl-saidas').checked;
+            const verFaltas = document.getElementById('tgl-faltas').checked;
+            
+            let hInic = parseInt(document.getElementById('select-inicio').value);
+            let hFim = parseInt(document.getElementById('select-fim').value);
+            const precisao = parseInt(document.getElementById('select-precisao').value);
+
+            if(hInic >= hFim) { hInic = hFim - 1; document.getElementById('select-inicio').value = hInic; }
+
+            const eixoXDinâmico = gerarEixoX(hInic, hFim, precisao);
+            const dataSelecionada = document.getElementById('select-data').value;
+            const minInicioAbsoluto = hInic * 60;
+            const minFimAbsoluto = hFim * 60;
+
+            let dados = dadosHistorico.filter(i => i.data === dataSelecionada);
+            if (abaAtual !== 'Geral') dados = dados.filter(i => i.setor === abaAtual);
+
+            const mapChegadas = {}, mapSaidas = {}, mapFaltas = {};
+            eixoXDinâmico.forEach(h => { mapChegadas[h] = 0; mapSaidas[h] = 0; mapFaltas[h] = 0; });
+            
+            const statsOps = {};
+            let totalAtendidosPeriodo = 0;
+
+            dados.forEach(item => {
+                // TRAVA DO FILTRO DE TEMPO PARA A TABELA E KPIS
+                let dentroDoHorario = false;
+                const tempoValidacao = item.horaAtendimento || item.horaChegada;
+                if(tempoValidacao) {
+                    const dVal = new Date(tempoValidacao);
+                    const tMin = (dVal.getHours() * 60) + dVal.getMinutes();
+                    if(tMin >= minInicioAbsoluto && tMin <= minFimAbsoluto) dentroDoHorario = true;
+                }
+
+                if(!dentroDoHorario) return; // Ignora tudo fora do filtro
+
+                const blocoEmissao = encaixarNoBloco(item.horaChegada, hInic, hFim, precisao, eixoXDinâmico);
+                const blocoConclusao = encaixarNoBloco(item.horaAtendimento, hInic, hFim, precisao, eixoXDinâmico);
+
+                if(blocoEmissao) mapChegadas[blocoEmissao]++;
+
+                if (item.resultado === 'atendido') {
+                    if(blocoConclusao) mapSaidas[blocoConclusao]++;
+                    totalAtendidosPeriodo++;
+                    
+                    if(item.atendente) {
+                        if(!statsOps[item.atendente]) statsOps[item.atendente] = { total: 0, setor: item.setor, somaEspera: 0 };
+                        statsOps[item.atendente].total++;
+                        statsOps[item.atendente].somaEspera += (item.tempoEspera || 0);
+                    }
+                } 
+                else if (item.resultado === 'falta') {
+                    if(blocoConclusao) mapFaltas[blocoConclusao]++;
+                }
+            });
+
+            // Preenchimento dos Novos KPIs
+            document.getElementById('kpi-atendidos-periodo').innerText = totalAtendidosPeriodo;
+            
+            const estatisticasAbsenteismo = calcularEstatisticaAbsenteismo(minInicioAbsoluto, minFimAbsoluto);
+            document.getElementById('kpi-absenteismo-media').innerText = estatisticasAbsenteismo.media;
+            document.getElementById('kpi-absenteismo-desvio').innerText = estatisticasAbsenteismo.desvio;
+
+            const arrChegadas = [], arrSaidas = [], arrFaltas = [];
+            eixoXDinâmico.forEach(h => {
+                arrChegadas.push(mapChegadas[h]); arrSaidas.push(mapSaidas[h]); arrFaltas.push(mapFaltas[h]);
+            });
+
+            desenharGraficoMestre(eixoXDinâmico, arrChegadas, arrSaidas, arrFaltas, verChegadas, verSaidas, verFaltas);
+            renderizarTabela(statsOps, totalAtendidosPeriodo);
+        }
+
+        function desenharGraficoMestre(labels, dChegadas, dSaidas, dFaltas, showC, showS, showF) {
+            if(chartMestre) chartMestre.destroy();
+            
+            const datasetsLivres = [];
+            
+            if(showC) datasetsLivres.push({
+                label: 'Emissões (Fila crescendo)', data: dChegadas,
+                borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                borderWidth: 3, tension: 0.4, fill: true, pointRadius: 4
+            });
+            
+            if(showS) datasetsLivres.push({
+                label: 'Vazão (Pacientes Atendidos)', data: dSaidas,
+                borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                borderWidth: 4, tension: 0.4, fill: true, pointRadius: 5
+            });
+            
+            if(showF) datasetsLivres.push({
+                label: 'Absenteísmo (Faltas)', data: dFaltas,
+                borderColor: '#e11d48', backgroundColor: 'transparent',
+                borderWidth: 2, tension: 0.4, borderDash: [5, 5], pointRadius: 3
+            });
+
+            chartMestre = new Chart(document.getElementById('graficoMestre').getContext('2d'), {
+                type: 'line',
+                data: { labels: labels, datasets: datasetsLivres },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 10, font: {weight: 'bold'} } } }, 
+                    scales: { 
+                        y: { beginAtZero: true, border: {display:false}, ticks: { precision: 0, stepSize: 1 } }, 
+                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 20 } } 
+                    } 
+                }
+            });
+        }
+
+        function renderizarTabela(statsOps, totalAtendidosPeriodo) {
+            const tbody = document.getElementById('lista-operadores');
+            const totalizador = document.getElementById('tabela-total-atendidos');
+            
+            tbody.innerHTML = '';
+            totalizador.innerText = `${totalAtendidosPeriodo} pacs`;
+            
+            const ops = Object.keys(statsOps).sort((a,b) => statsOps[b].total - statsOps[a].total);
+            
+            if(ops.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 30px;">Sem atendimentos no recorte de tempo selecionado.</td></tr>'; 
+                return; 
+            }
+
+            ops.forEach(nome => {
+                const op = statsOps[nome];
+                const esperaMedia = Math.round(op.somaEspera / op.total);
+                let badge = esperaMedia > 30 ? `<span class="status-pill-danger">🔥 ${esperaMedia} min</span>` : `<span style="font-weight:700; color:var(--c-navy);">${esperaMedia} min</span>`;
+                
+                tbody.innerHTML += `<tr>
+                    <td><div class="op-name-wrapper"><div class="op-avatar">${nome.charAt(0).toUpperCase()}</div> ${nome}</div></td>
+                    <td style="color:var(--text-muted); font-weight:500;">${op.setor}</td>
+                    <td><span class="status-pill-light" style="background:#e2e8f0; color:#475569;">${op.total} pacs</span></td>
+                    <td>${badge}</td>
+                </tr>`;
+            });
+        }
+    </script>
+</body>
+</html>

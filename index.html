@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Central de Regulação</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #111827; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        .box-login { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); width: 100%; max-width: 450px; text-align: center; }
+        .box-login h2 { margin: 0 0 10px; font-size: 28px; font-weight: 900; color: #111827; text-transform: uppercase; }
+        .box-login p { color: #6b7280; margin-bottom: 30px; font-weight: 600; }
+        
+        .seletor-grupo { margin-bottom: 20px; text-align: left; }
+        .seletor-grupo label { display: block; font-weight: 800; margin-bottom: 8px; color: #374151; }
+        .seletor-grupo select { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid #d1d5db; font-size: 16px; font-family: 'Inter'; font-weight: 700; background: #f9fafb; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+        .seletor-grupo select:focus { border-color: #2563eb; }
+        
+        .btn-entrar { background: #2563eb; color: white; width: 100%; padding: 18px; border: none; border-radius: 8px; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 15px; }
+        .btn-entrar:hover { background: #1d4ed8; }
+        .btn-entrar:active { transform: scale(0.98); }
+
+        /* Classe para esconder a div do operador quando não for necessária */
+        .escondido { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="box-login">
+        <h2>Acesso ao Sistema</h2>
+        <p>Selecione seu perfil para iniciar</p>
+        
+        <div class="seletor-grupo">
+            <label>1. Setor de Lotação:</label>
+            <select id="select-setor">
+                <option value="Recepção">Recepção</option>
+                <option value="Porta">Porta</option>
+                <option value="Regulação">Regulação</option>
+                <option value="Complexidade">Complexidade</option>
+                <option value="Autorização">Autorização</option>
+            </select>
+        </div>
+        
+        <div class="seletor-grupo escondido" id="div-operador">
+            <label>2. Operador:</label>
+            <select id="select-guiche">
+                </select>
+        </div>
+        
+        <button class="btn-entrar" onclick="entrarNoSistema()">ENTRAR NO GUICHÊ</button>
+    </div>
+
+    <script>
+        // Banco de Dados local dos perfis
+        const reguladoresPorSetor = {
+            'Recepção': [],
+            'Porta': [],
+            'Regulação': ['Vinny', 'Evelyn', 'Diana'], // <-- Diana adicionada aqui perfeitamente
+            'Complexidade': ['Williane', 'Jéssica'],
+            'Autorização': ['Alexandra']
+        };
+
+        // Troca os nomes e a visibilidade automaticamente quando o setor é selecionado
+        document.getElementById('select-setor').addEventListener('change', function() {
+            const setor = this.value;
+            const selectGuiche = document.getElementById('select-guiche');
+            const divOperador = document.getElementById('div-operador');
+            
+            selectGuiche.innerHTML = ''; // Limpa a lista anterior
+            
+            // Se for Recepção ou Porta, esconde a div do Operador
+            if (setor === 'Recepção' || setor === 'Porta') {
+                divOperador.classList.add('escondido');
+            } else {
+                // Se for regulador, mostra a div e preenche os nomes
+                divOperador.classList.remove('escondido');
+                reguladoresPorSetor[setor].forEach(nome => {
+                    selectGuiche.innerHTML += `<option value="${nome}">${nome}</option>`;
+                });
+            }
+        });
+
+        // Dispara a função uma vez no início para ajustar a tela inicial
+        document.getElementById('select-setor').dispatchEvent(new Event('change'));
+
+        // Função de Roteamento Inteligente
+        function entrarNoSistema() {
+            const setorEscolhido = document.getElementById('select-setor').value;
+            const divOperador = document.getElementById('div-operador');
+            let operadorEscolhido = '';
+            
+            // Só tenta capturar o nome do operador se a caixa dele estiver visível
+            if (!divOperador.classList.contains('escondido')) {
+                operadorEscolhido = document.getElementById('select-guiche').value;
+            }
+            
+            // Salva no "Banco de Dados" do navegador (localStorage) para a próxima tela puxar
+            localStorage.setItem('operadorAtual', operadorEscolhido);
+            localStorage.setItem('setorAtual', setorEscolhido);
+            
+            // Roteia o usuário para a URL do arquivo HTML correspondente
+            if (setorEscolhido === 'Recepção') {
+                window.location.href = 'emissor.html';
+            } 
+            else if (setorEscolhido === 'Porta') {
+                window.location.href = 'porta.html';
+            } 
+            else if (setorEscolhido === 'Regulação') {
+                window.location.href = 'regulacao.html';
+            } 
+            else if (setorEscolhido === 'Complexidade') {
+                window.location.href = 'complexidade.html';
+            } 
+            else if (setorEscolhido === 'Autorização') {
+                window.location.href = 'autorizacao.html';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da TV - Central de Regulação de Assú</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+
+        body { font-family: 'Inter', sans-serif; background-color: #7b1a1a; color: white; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        .coluna-esquerda { flex: 7; display: flex; flex-direction: column; justify-content: space-between; padding: 25px 40px; background: radial-gradient(circle, #8a1d1d 0%, #631212 100%); }
+        .coluna-direita { flex: 3; display: flex; flex-direction: column; background-color: #4a0d0d; border-left: 5px solid #ffffff; padding: 25px 30px; }
+
+        .cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 2px solid rgba(255, 255, 255, 0.2); padding-bottom: 15px; }
+        .logo-box { background-color: white; padding: 8px 15px; border-radius: 10px; display: flex; align-items: center; justify-content: center; height: 8vh; }
+        .logo-box img { max-height: 100%; width: auto; object-fit: contain; }
+        .titulo-central { font-size: 2.2vw; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); text-align: right; line-height: 1.1; }
+
+        .area-chamada { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .label-senha { font-size: 2.2vw; font-weight: 800; letter-spacing: 2px; opacity: 0.9; margin-bottom: -10px; }
+        .senha-numero { font-size: 12vw; font-weight: 900; line-height: 1; margin: 0; text-shadow: 4px 4px 10px rgba(0,0,0,0.5); }
+        .senha-setor { font-size: 2vw; font-weight: 800; text-transform: uppercase; color: #ffecb3; }
+        
+        .instrucao-sala { margin-top: 25px; background-color: white; color: #7b1a1a; padding: 12px 30px; border-radius: 40px; font-size: 1.8vw; font-weight: 900; text-transform: uppercase; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+
+        .rodape-alerta { height: 10vh; display: flex; justify-content: center; align-items: center; text-align: center; border-top: 2px solid rgba(255, 255, 255, 0.2); margin-top: 15px; }
+        .msg-alerta { font-size: 2.5vw; font-weight: 900; text-transform: uppercase; text-shadow: 2px 2px 8px rgba(0,0,0,0.6); margin: 0; }
+        .msg-silencio { font-size: 3vw; color: #ffffff; }
+
+        .box-relogio { text-align: center; border-bottom: 2px solid rgba(255, 255, 255, 0.2); padding-bottom: 15px; margin-bottom: 20px; }
+        .box-relogio h3 { font-size: 1.5vw; margin: 0 0 5px 0; color: #ffecb3; text-transform: uppercase; }
+        #hora-atual { font-size: 4vw; font-weight: 900; display: block; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+        #data-atual { font-size: 1.2vw; font-weight: 600; text-transform: uppercase; color: #e5e7eb; margin-top: 5px; display: block;}
+
+        .titulo-historico { text-align: center; font-size: 1.6vw; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; text-shadow: 2px 2px 5px rgba(0,0,0,0.4); }
+        .lista-historico { display: flex; flex-direction: column; gap: 15px; }
+        
+        .bloco-setor { background: rgba(0,0,0,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 15px; padding: 10px 15px; }
+        .nome-setor { font-size: 1.2vw; font-weight: 800; color: #ffecb3; text-transform: uppercase; margin-bottom: 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px; }
+        
+        .linha-ficha-hist { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .linha-ficha-hist:last-child { margin-bottom: 0; }
+        .hist-ficha-codigo { font-size: 1.8vw; font-weight: 900; color: #ffffff; }
+        .hist-ficha-hora { font-size: 1.2vw; font-weight: 600; color: #ffecb3; opacity: 0.85; }
+
+        .piscar-prioridade { animation: flash-prioridade 1.2s infinite; }
+        .piscar-normal { animation: flash-normal 1.2s infinite; }
+        @keyframes flash-prioridade { 0%, 100% { color: #ffffff; text-shadow: 0 0 20px #eab308, 0 0 40px #ca8a04; } 50% { color: #fef08a; text-shadow: 0 0 5px #eab308; } }
+        @keyframes flash-normal { 0%, 100% { color: #ffffff; text-shadow: 0 0 20px #60a5fa, 0 0 40px #3b82f6; } 50% { color: #bfdbfe; text-shadow: 0 0 5px #60a5fa; } }
+        
+        .escondido { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="cortina-tela-cheia" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; cursor: pointer; font-family: 'Inter', sans-serif;">
+        <h1 style="font-size: 5vw; margin-bottom: 20px; text-transform: uppercase; text-shadow: 2px 2px 10px rgba(0,0,0,0.8);">📺 Painel de Senhas</h1>
+        <p style="font-size: 2vw; background: #0f0; color: #000; padding: 20px 40px; border-radius: 15px; font-weight: 900; text-align: center; text-transform: uppercase; box-shadow: 0px 5px 15px rgba(0,255,0,0.3);">
+            CLIQUE AQUI PARA INICIAR EM TELA CHEIA<br>E ATIVAR O SOM DO PAINEL
+        </p>
+    </div>
+
+    <div class="coluna-esquerda">
+        
+        <div class="cabecalho">
+            <div class="logo-box">
+                <img src="logo-assu.png" alt="Prefeitura do Assú">
+            </div>
+            <div class="titulo-central">CENTRAL DE REGULAÇÃO<br>E TRANSPORTE</div>
+        </div>
+
+        <div class="area-chamada" id="tela-aguardando">
+            <img src="https://cdn-icons-png.flaticon.com/512/3035/3035043.png" alt="Aguardando" style="width: 10vw; opacity: 0.3; margin-bottom: 20px; filter: invert(1);">
+        </div>
+
+        <div class="area-chamada escondido" id="tela-chamada">
+            <div class="label-senha">SENHA:</div>
+            <div class="senha-numero" id="tv-ficha">RP 000</div>
+            <div class="senha-setor" id="tv-setor">REGULAÇÃO PRIORIDADE</div>
+            <div class="instrucao-sala">DIRIJA-SE À SALA DA REGULAÇÃO</div>
+        </div>
+
+        <div class="rodape-alerta" id="area-rodape">
+            <h1 class="msg-alerta">AGUARDE SUA VEZ PARA ENTRAR NA SALA DE REGULAÇÃO</h1>
+        </div>
+
+    </div>
+
+    <div class="coluna-direita">
+        
+        <div class="box-relogio">
+            <h3>DATA / HORA</h3>
+            <span id="hora-atual">--:--:--</span>
+            <span id="data-atual">--/--/----</span>
+        </div>
+
+        <div class="titulo-historico">ÚLTIMAS SENHAS CHAMADAS</div>
+        
+        <div class="lista-historico" id="lista-historico">
+            <div class="bloco-setor">
+                <div class="nome-setor">Autorização</div>
+                <div id="hist-autorizacao"></div>
+            </div>
+            <div class="bloco-setor">
+                <div class="nome-setor">Regulação</div>
+                <div id="hist-regulacao"></div>
+            </div>
+            <div class="bloco-setor">
+                <div class="nome-setor">Complexidade</div>
+                <div id="hist-complexidade"></div>
+            </div>
+        </div>
+
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let timerVoltarParaAguardando;
+        let cicloMensagem = 0;
+        let ultimoAvisoSilencio = 0; 
+        
+        let historicoSetores = {
+            autorizacao: [],
+            regulacao: { prioridade: { ficha: '---', hora: '' }, normal: { ficha: '---', hora: '' } },
+            complexidade: { prioridade: { ficha: '---', hora: '' }, normal: { ficha: '---', hora: '' } }
+        };
+
+        function atualizarRelogio() {
+            const agora = new Date();
+            const dataFormatada = agora.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            document.getElementById('data-atual').innerText = dataFormatada;
+            document.getElementById('hora-atual').innerText = horaFormatada;
+        }
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio();
+
+        function activarAudio() {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+        }
+
+        // ==========================================
+        // LÓGICA DE TELA CHEIA E SOM NA CORTINA PRETA
+        // ==========================================
+        document.getElementById('cortina-tela-cheia').addEventListener('click', function() {
+            // 1. Força a tela cheia no navegador da TV
+            let elemento = document.documentElement;
+            if (elemento.requestFullscreen) {
+                elemento.requestFullscreen();
+            } else if (elemento.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+                elemento.webkitRequestFullscreen();
+            } else if (elemento.msRequestFullscreen) { /* Edge antigo */
+                elemento.msRequestFullscreen();
+            }
+
+            // 2. Destrava o Áudio do Navegador para garantir a fala das senhas
+            activarAudio();
+            try {
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                ctx.resume();
+            } catch (e) { console.log("Áudio destravado com sucesso."); }
+
+            // 3. Esconde a cortina e mostra o painel bonito da TV
+            this.style.display = 'none';
+        });
+
+        function falar(fichaStr, guiche) {
+            window.speechSynthesis.cancel(); 
+            const partes = fichaStr.split(' ');
+            const siglaFicha = partes[0] || 'R';
+            const numero = partes[1] || '01';
+            
+            let texto = '';
+
+            if (siglaFicha === 'AT') {
+                texto = `Atenção, senha autorização ${numero}, dirija-se à sala da regulação`;
+            } else if (siglaFicha === 'RP') {
+                texto = `Atenção, senha regulação prioridade ${numero}, dirija-se à sala da regulação`;
+            } else if (siglaFicha === 'R') {
+                texto = `Atenção, senha regulação normal ${numero}, dirija-se à sala da regulação`;
+            } else if (siglaFicha === 'CP') {
+                texto = `Atenção, senha complexidade prioridade ${numero}, dirija-se à sala da regulação`;
+            } else if (siglaFicha === 'C') {
+                texto = `Atenção, senha complexidade normal ${numero}, dirija-se à sala da regulação`;
+            } else {
+                texto = `Atenção, senha ${numero}, dirija-se à sala da regulação`;
+            }
+
+            if (guiche) {
+                texto += ` ao guichê ${guiche}.`;
+            } else {
+                texto += '.';
+            }
+
+            let agora = Date.now();
+            if (agora - ultimoAvisoSilencio > 10 * 60 * 1000) { 
+                texto += " Por favor, faça silêncio por gentileza.";
+                ultimoAvisoSilencio = agora;
+            }
+
+            const mensagem = new SpeechSynthesisUtterance(texto);
+            mensagem.lang = 'pt-BR';
+            mensagem.rate = 0.88;
+
+            
+            window.speechSynthesis.speak(mensagem);
+        }
+
+        function alternarMensagensEspera() {
+            const rodape = document.getElementById('area-rodape');
+            const telaChamada = document.getElementById('tela-chamada');
+            
+            if (!telaChamada.classList.contains('escondido')) return;
+
+            cicloMensagem++;
+            if (cicloMensagem > 3) cicloMensagem = 1; 
+
+            if (cicloMensagem === 1) {
+                rodape.innerHTML = `<h1 class="msg-alerta">AGUARDE SUA VEZ PARA ENTRAR NA SALA DE REGULAÇÃO</h1>`;
+            } 
+            else if (cicloMensagem === 2) {
+                rodape.innerHTML = `<h1 class="msg-alerta msg-silencio">🤫 POR FAVOR, FAÇA SILÊNCIO</h1>`;
+            } 
+            else if (cicloMensagem === 3) {
+                rodape.innerHTML = `<h1 class="msg-alerta" style="color: #facc15;">⚠️ ATENÇÃO: SE A FICHA PASSAR, O PACIENTE DEVERÁ RETORNAR AO FINAL DA FILA</h1>`;
+            }
+        }
+        setInterval(alternarMensagensEspera, 30000); 
+
+        function voltarTelaPadrao() {
+            document.getElementById('tela-chamada').classList.add('escondido');
+            document.getElementById('tela-aguardando').classList.remove('escondido');
+        }
+
+        function adicionarAoHistorico(ficha) {
+            const agora = new Date();
+            const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            const sigla = ficha.split(' ')[0];
+            
+            if (sigla === 'AT') {
+                historicoSetores.autorizacao.unshift({ ficha: ficha, hora: horaStr });
+                if (historicoSetores.autorizacao.length > 2) historicoSetores.autorizacao.pop();
+            } 
+            else if (sigla === 'RP') {
+                historicoSetores.regulacao.prioridade = { ficha: ficha, hora: horaStr };
+            } else if (sigla === 'R') {
+                historicoSetores.regulacao.normal = { ficha: ficha, hora: horaStr };
+            } 
+            else if (sigla === 'CP') {
+                historicoSetores.complexidade.prioridade = { ficha: ficha, hora: horaStr };
+            } else if (sigla === 'C') {
+                historicoSetores.complexidade.normal = { ficha: ficha, hora: horaStr };
+            }
+
+            renderizarHistorico();
+        }
+
+        function renderizarHistorico() {
+            const contAut = document.getElementById('hist-autorizacao');
+            contAut.innerHTML = '';
+            if (historicoSetores.autorizacao.length === 0) {
+                contAut.innerHTML = `<div class="linha-ficha-hist"><span class="hist-ficha-codigo" style="opacity:0.3">---</span></div>`;
+            } else {
+                historicoSetores.autorizacao.forEach(item => {
+                    contAut.innerHTML += `
+                        <div class="linha-ficha-hist">
+                            <span class="hist-ficha-codigo">${item.ficha}</span>
+                            <span class="hist-ficha-hora">${item.hora}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            const regPri = historicoSetores.regulacao.prioridade;
+            const regNor = historicoSetores.regulacao.normal;
+            document.getElementById('hist-regulacao').innerHTML = `
+                <div class="linha-ficha-hist">
+                    <span class="hist-ficha-codigo">${regPri.ficha}</span>
+                    <span class="hist-ficha-hora">${regPri.hora}</span>
+                </div>
+                <div class="linha-ficha-hist">
+                    <span class="hist-ficha-codigo">${regNor.ficha}</span>
+                    <span class="hist-ficha-hora">${regNor.hora}</span>
+                </div>
+            `;
+
+            const comPri = historicoSetores.complexidade.prioridade;
+            const comNor = historicoSetores.complexidade.normal;
+            document.getElementById('hist-complexidade').innerHTML = `
+                <div class="linha-ficha-hist">
+                    <span class="hist-ficha-codigo">${comPri.ficha}</span>
+                    <span class="hist-ficha-hora">${comPri.hora}</span>
+                </div>
+                <div class="linha-ficha-hist">
+                    <span class="hist-ficha-codigo">${comNor.ficha}</span>
+                    <span class="hist-ficha-hora">${comNor.hora}</span>
+                </div>
+            `;
+        }
+
+        renderizarHistorico();
+
+        socket.on('sistema_resetado', () => {
+            historicoSetores = {
+                autorizacao: [],
+                regulacao: { prioridade: { ficha: '---', hora: '' }, normal: { ficha: '---', hora: '' } },
+                complexidade: { prioridade: { ficha: '---', hora: '' }, normal: { ficha: '---', hora: '' } }
+            };
+            renderizarHistorico(); 
+            voltarTelaPadrao(); 
+        });
+
+        socket.on('tocar_chamada_tv', (dados) => {
+            clearTimeout(timerVoltarParaAguardando);
+
+            const fichaStr = dados.ficha;
+            const guiche = dados.guiche;
+            const siglaFicha = fichaStr.split(' ')[0];
+            const corPiscar = (siglaFicha === 'RP' || siglaFicha === 'CP') ? 'piscar-prioridade' : 'piscar-normal';
+            
+            let nomeSetor = "";
+            if (siglaFicha === 'AT') nomeSetor = "AUTORIZAÇÃO";
+            else if (siglaFicha === 'RP') nomeSetor = "REGULAÇÃO PRIORIDADE";
+            else if (siglaFicha === 'R') nomeSetor = "REGULAÇÃO NORMAL";
+            else if (siglaFicha === 'CP') nomeSetor = "COMPLEXIDADE PRIORIDADE";
+            else if (siglaFicha === 'C') nomeSetor = "COMPLEXIDADE NORMAL";
+            
+            document.getElementById('tela-aguardando').classList.add('escondido');
+            const telaChamada = document.getElementById('tela-chamada');
+            telaChamada.classList.remove('escondido');
+
+            const fichaElem = document.getElementById('tv-ficha');
+            fichaElem.className = `senha-numero ${corPiscar}`;
+            fichaElem.innerText = fichaStr;
+            
+            document.getElementById('tv-setor').innerText = nomeSetor + (guiche ? ` — Guichê ${guiche}` : '');
+            const instr = document.querySelector('.instrucao-sala');
+            instr.innerText = guiche ? `DIRIJA-SE AO GUICHÊ ${guiche}` : 'DIRIJA-SE À SALA DA REGULAÇÃO';
+            adicionarAoHistorico(fichaStr + (guiche ? ` (G${guiche})` : ''));
+            falar(fichaStr, guiche);
+
+            timerVoltarParaAguardando = setTimeout(voltarTelaPadrao, 25000);
+        });
+    </script>
+</body>
+</html>

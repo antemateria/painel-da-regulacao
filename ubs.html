@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento UBS - Regulação Ártemis</title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --c-red: #E63946; --c-red-light: #EC9A9A;
+            --c-mint-light: #F1FAEE; --c-mint: #CDEAE5;
+            --c-cyan: #A8DADC; --c-blue-light: #77ABBD;
+            --c-blue: #457B9D; --c-blue-dark: #31587A;
+            --c-navy: #1D3557; --c-navy-dark: #324766;
+            --bg-body: #f3f4f6; --bg-card: #ffffff; 
+            --text-main: #1D3557; --text-muted: #77ABBD;
+            --border-light: #e5e7eb; --sidebar-w: 280px;
+            
+            --gold: #F59E0B; --silver: #94A3B8; --bronze: #D97706;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--c-blue-light); border-radius: 10px; }
+        
+        /* SIDEBAR */
+        .sidebar { width: var(--sidebar-w); background: var(--bg-card); display: flex; flex-direction: column; padding: 30px 20px; border-right: 1px solid var(--border-light); flex-shrink: 0; }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; padding-left: 10px; }
+        .sidebar-brand i { font-size: 32px; color: var(--c-navy); }
+        .sidebar-brand h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: var(--c-navy); }
+        
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-item { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 14px; font-weight: 600; color: var(--text-muted); border-radius: 16px; transition: all 0.2s ease; }
+        .nav-item:hover { background: var(--c-mint-light); color: var(--c-blue); }
+        .nav-item.active { background: var(--c-navy); color: #ffffff; box-shadow: 0 10px 15px -3px rgba(29, 53, 87, 0.3); }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 40px 50px; overflow-y: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header-title h1 { font-size: 32px; font-weight: 800; color: var(--c-navy); letter-spacing: -1px; }
+        
+        .filtro-data-container { display: flex; align-items: center; gap: 10px; background: white; padding: 8px 16px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid var(--border-light); }
+        .filtro-data-container label { font-weight: 700; color: var(--c-navy); font-size: 14px; }
+        .filtro-data-container select { border: none; font-weight: 600; color: var(--text-muted); font-size: 15px; outline: none; cursor: pointer; background: transparent; }
+
+        /* KPI Cards Secundários */
+        .kpi-row { display: flex; gap: 24px; margin-bottom: 30px; }
+        .kpi-mini { flex: 1; background: var(--bg-card); padding: 20px; border-radius: 16px; border: 1px solid var(--border-light); display: flex; align-items: center; gap: 16px; }
+        .kpi-mini-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--c-mint-light); color: var(--c-blue); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .kpi-mini-info h4 { font-size: 13px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .kpi-mini-info .value { font-size: 24px; font-weight: 800; color: var(--c-navy); }
+
+        /* RANKING TOP 3 UBS */
+        .ranking-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 30px; }
+        .ranking-card { background: var(--bg-card); padding: 25px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); position: relative; overflow: hidden; display: flex; align-items: center; gap: 20px; border: 1px solid var(--border-light); transition: transform 0.2s; }
+        .ranking-card:hover { transform: translateY(-5px); }
+        
+        .medal-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: white; flex-shrink: 0; }
+        .medal-gold { background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
+        .medal-silver { background: linear-gradient(135deg, #E2E8F0 0%, #94A3B8 100%); box-shadow: 0 4px 15px rgba(148, 163, 184, 0.3); }
+        .medal-bronze { background: linear-gradient(135deg, #FDBA74 0%, #D97706 100%); box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3); }
+        
+        .ranking-info { flex: 1; }
+        .ranking-title { font-size: 12px; text-transform: uppercase; font-weight: 800; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; }
+        .ranking-ubs-name { font-size: 18px; font-weight: 800; color: var(--c-navy); margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        .ranking-value { font-size: 24px; font-weight: 800; color: var(--c-blue); display: flex; align-items: baseline; gap: 4px; }
+        .ranking-sub { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+
+        /* PAINÉIS (TABELAS) */
+        .panel { background: var(--bg-card); padding: 30px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 30px; border: 1px solid var(--border-light); }
+        .panel-header { font-size: 18px; font-weight: 800; color: var(--c-navy); margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .panel-subtitle { font-size: 14px; color: var(--text-muted); font-weight: 500; margin-bottom: 25px; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; max-height: 500px; overflow-y: auto; }
+        .table-flow { width: 100%; border-collapse: collapse; min-width: 700px; }
+        .table-flow th { position: sticky; top: 0; background: var(--bg-card); text-align: left; padding-bottom: 15px; color: var(--text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid var(--border-light); z-index: 10; letter-spacing: 0.5px; }
+        .table-flow td { padding: 16px 0; border-bottom: 1px solid var(--border-light); color: var(--c-navy); font-weight: 600; font-size: 14px; }
+        
+        /* Estilos de Status na Tabela */
+        .ubs-badge { background: #f1f5f9; color: #475569; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; display: inline-block; border: 1px solid #e2e8f0; }
+        .status-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .status-atendido { background: var(--c-mint-light); color: #059669; }
+        .time-badge { font-weight: 700; color: var(--c-navy); }
+        .time-alert { color: var(--c-red); font-weight: 800; }
+
+        /* Gaveta Style */
+        .gaveta-toggle { cursor: pointer; user-select: none; transition: background 0.2s; padding: 15px; border-radius: 12px; background: #f8fafc; border: 1px dashed var(--border-light); }
+        .gaveta-toggle:hover { background: #f1f5f9; }
+        #gaveta-conteudo { display: none; margin-top: 20px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-brand"><i class="ph-fill ph-hospital"></i><h2>Monitor UBS</h2></div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="mudarAba('Geral', this)"><i class="ph-bold ph-squares-four"></i> Geral</div>
+            <div class="nav-item" onclick="mudarAba('Regulação', this)"><i class="ph-bold ph-stethoscope"></i> Regulação</div>
+            <div class="nav-item" onclick="mudarAba('Complexidade', this)"><i class="ph-bold ph-activity"></i> Complexidade</div>
+            <div class="nav-item" onclick="mudarAba('Autorização', this)"><i class="ph-bold ph-file-text"></i> Autorização</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <div class="header-title"><h1 id="titulo-aba">Geral</h1></div>
+            <div class="filtro-data-container">
+                <label for="select-data"><i class="ph-bold ph-calendar-blank"></i> Analisar Dia:</label>
+                <select id="select-data" onchange="processarDadosUBS()"></select>
+            </div>
+        </div>
+
+        <div class="kpi-row">
+            <div class="kpi-mini">
+                <div class="kpi-mini-icon"><i class="ph-bold ph-users"></i></div>
+                <div class="kpi-mini-info">
+                    <h4>Total de Pacientes</h4>
+                    <div class="value" id="kpi-total-rede">0</div>
+                </div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-icon" style="background: #e0f2fe; color: #0284c7;"><i class="ph-bold ph-file-text"></i></div>
+                <div class="kpi-mini-info">
+                    <h4>Exames Marcados</h4>
+                    <div class="value" id="kpi-sangue">0</div>
+                </div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-icon" style="background: #fef08a; color: #ca8a04;"><i class="ph-bold ph-radioactive"></i></div>
+                <div class="kpi-mini-info">
+                    <h4>Raios-X Marcados</h4>
+                    <div class="value" id="kpi-raiox">0</div>
+                </div>
+            </div>
+            <div class="kpi-mini">
+                <div class="kpi-mini-icon" style="background: #dcfce7; color: #166534;"><i class="ph-bold ph-bandaids"></i></div>
+                <div class="kpi-mini-info">
+                    <h4>Curativos Especiais</h4>
+                    <div class="value" id="kpi-curativos">0</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--c-navy); margin-bottom: 16px;">Ranking de Demanda</h3>
+        <div class="ranking-container">
+            <div class="ranking-card">
+                <div class="medal-icon medal-gold"><i class="ph-fill ph-trophy"></i></div>
+                <div class="ranking-info">
+                    <div class="ranking-title">1º Lugar em Volume</div>
+                    <div class="ranking-ubs-name" id="ubs-nome-1">Aguardando Dados</div>
+                    <div class="ranking-value"><span id="ubs-valor-1">0</span> <span class="ranking-sub">atendimentos</span></div>
+                </div>
+            </div>
+            <div class="ranking-card">
+                <div class="medal-icon medal-silver"><i class="ph-fill ph-medal"></i></div>
+                <div class="ranking-info">
+                    <div class="ranking-title">2º Lugar em Volume</div>
+                    <div class="ranking-ubs-name" id="ubs-nome-2">Aguardando Dados</div>
+                    <div class="ranking-value"><span id="ubs-valor-2">0</span> <span class="ranking-sub">atendimentos</span></div>
+                </div>
+            </div>
+            <div class="ranking-card">
+                <div class="medal-icon medal-bronze"><i class="ph-fill ph-medal"></i></div>
+                <div class="ranking-info">
+                    <div class="ranking-title">3º Lugar em Volume</div>
+                    <div class="ranking-ubs-name" id="ubs-nome-3">Aguardando Dados</div>
+                    <div class="ranking-value"><span id="ubs-valor-3">0</span> <span class="ranking-sub">atendimentos</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                Consolidado das Unidades Básicas de Saúde
+            </div>
+            <div class="panel-subtitle">Total de pacientes atendidos e procedimentos marcados por cada posto de saúde.</div>
+            
+            <div class="table-responsive">
+                <table class="table-flow">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Unidade de Origem</th>
+                            <th style="width: 15%; text-align: center;">Total Atendidos</th>
+                            <th style="width: 15%; text-align: center;">Exames Sangue</th>
+                            <th style="width: 15%; text-align: center;">Raios-X</th>
+                            <th style="width: 15%; text-align: center;">Curativos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela-resumo">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel" style="padding: 15px 30px;">
+            <div class="gaveta-toggle" onclick="toggleGaveta()">
+                <div class="panel-header" style="margin-bottom: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="ph-bold ph-caret-down" id="icone-gaveta" style="transition: transform 0.3s;"></i> 
+                        Ver Fluxo Detalhado de Pacientes 
+                    </div>
+                    <span id="contador-tabela" style="font-size: 13px; font-weight: 700; background: var(--c-navy); color: white; padding: 4px 12px; border-radius: 12px;">0 registros</span>
+                </div>
+            </div>
+            
+            <div id="gaveta-conteudo">
+                <div class="panel-subtitle" style="margin-top: 15px;">Acompanhamento individual: quem chegou, de onde veio e como foi o atendimento.</div>
+                <div class="table-responsive">
+                    <table class="table-flow">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Horário</th>
+                                <th style="width: 30%;">Unidade de Origem (UBS)</th>
+                                <th style="width: 15%;">Senha / Setor</th>
+                                <th style="width: 20%;">Tempo na Fila</th>
+                                <th style="width: 20%;">Desfecho</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpo-tabela-fluxo">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let dadosHistorico = [];
+        let abaAtual = 'Geral';
+        
+        function obterDataHojeLocal() {
+            const objData = new Date();
+            return `${objData.getFullYear()}-${String(objData.getMonth() + 1).padStart(2, '0')}-${String(objData.getDate()).padStart(2, '0')}`;
+        }
+        let dataReferenciaHoje = obterDataHojeLocal();
+
+        // Conexão Socket
+        socket.on('connect', () => { socket.emit('pedir_dados_auditoria'); });
+        // Antes, isto pedia o histórico INTEIRO de volta a cada fila atualizada em
+        // qualquer setor do sistema — com o histórico já passando de 400KB e
+        // crescendo, isso sozinho consumia a banda do Render muito rápido.
+        // Agora só recebemos o registro novo, incrementalmente, sem reenviar tudo.
+        socket.on('novo_registro_auditoria', (novoRegistro) => {
+            if (!novoRegistro) return;
+            dadosHistorico.push(novoRegistro);
+            atualizarSeletorDeDatas();
+            processarDadosUBS();
+        });
+        
+        socket.on('receber_dados_auditoria', (historico) => { 
+            dadosHistorico = historico || []; 
+            atualizarSeletorDeDatas();
+            processarDadosUBS(); 
+        });
+
+        // Gaveta Toggle Function
+        function toggleGaveta() {
+            const conteudo = document.getElementById('gaveta-conteudo');
+            const icone = document.getElementById('icone-gaveta');
+            if (conteudo.style.display === 'block') {
+                conteudo.style.display = 'none';
+                icone.style.transform = 'rotate(0deg)';
+            } else {
+                conteudo.style.display = 'block';
+                icone.style.transform = 'rotate(-180deg)';
+            }
+        }
+
+        // Navegação Lateral
+        function mudarAba(setor, elemento) {
+            abaAtual = setor;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            elemento.classList.add('active');
+            const textoAba = setor === 'Geral' ? 'Geral (Todas as Unidades)' : setor;
+            document.getElementById('titulo-aba').innerText = textoAba;
+            processarDadosUBS();
+        }
+
+        // Popula o Filtro de Dias
+        function atualizarSeletorDeDatas() {
+            const seletor = document.getElementById('select-data');
+            const dataAtualSelecionada = seletor.value;
+            const datasUnicas = new Set();
+            datasUnicas.add(dataReferenciaHoje);
+
+            dadosHistorico.forEach(item => { if(item.data) datasUnicas.add(item.data); });
+            const datasOrdenadas = Array.from(datasUnicas).sort((a,b) => new Date(b) - new Date(a));
+            
+            seletor.innerHTML = '';
+            datasOrdenadas.forEach(data => {
+                const parts = data.split('-');
+                if(parts.length === 3) {
+                    const dataFormatada = data === dataReferenciaHoje ? `Hoje (${parts[2]}/${parts[1]})` : `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    const option = document.createElement('option');
+                    option.value = data; option.text = dataFormatada;
+                    seletor.appendChild(option);
+                }
+            });
+
+            if(dataAtualSelecionada && datasUnicas.has(dataAtualSelecionada)) seletor.value = dataAtualSelecionada;
+            else if (!dataAtualSelecionada) seletor.value = dataReferenciaHoje;
+        }
+
+        function formatarHora(isoString) {
+            if(!isoString) return '--:--';
+            const data = new Date(isoString);
+            return `${String(data.getHours()).padStart(2, '0')}:${String(data.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // MOTOR PRINCIPAL DE PROCESSAMENTO
+        function processarDadosUBS() {
+            const dataSelecionada = document.getElementById('select-data').value;
+            if(!dataSelecionada) return;
+
+            let dadosDoDia = dadosHistorico.filter(i => i.data === dataSelecionada);
+            if (abaAtual !== 'Geral') dadosDoDia = dadosDoDia.filter(i => i.setor === abaAtual);
+
+            atualizarKPIs(dadosDoDia);
+            atualizarRanking(dadosDoDia);
+            atualizarTabelaResumoUBS(dadosDoDia); // <-- NOVA TABELA AQUI
+            atualizarTabelaDeFluxo(dadosDoDia);   // <-- GAVETA AQUI
+        }
+
+       function atualizarKPIs(dados) {
+            // 1. Filtra os dados para manter APENAS os pacientes atendidos
+            const dadosAtendidos = dados.filter(item => item.resultado === 'atendido');
+            
+            // 2. Atualiza o contador na tela usando apenas a contagem dos atendidos
+            document.getElementById('kpi-total-rede').innerText = dadosAtendidos.length;
+            
+            let totalExames = 0, totalRaioX = 0, totalCurativos = 0;
+
+            // 3. O laço de repetição agora roda apenas sobre os dados filtrados
+            dadosAtendidos.forEach(item => {
+                const proc = (item.procedimentos || "").toLowerCase();
+                if (proc.includes('sangue')) totalExames++;
+                if (proc.includes('raio-x') || proc.includes('raio x') || proc.includes('raiox')) totalRaioX++;
+                if (proc.includes('curativo')) totalCurativos++;
+            });
+
+            document.getElementById('kpi-sangue').innerText = totalExames;
+            document.getElementById('kpi-raiox').innerText = totalRaioX;
+            document.getElementById('kpi-curativos').innerText = totalCurativos;
+        }
+       function atualizarRanking(dados) {
+            const contagemUBS = {};
+            dados.forEach(item => {
+                if (item.resultado !== 'atendido') return; 
+                const nomeUbs = (item.ubs || "NÃO INFORMADA").toUpperCase();
+                contagemUBS[nomeUbs] = (contagemUBS[nomeUbs] || 0) + 1;
+            });
+
+            const ranking = Object.keys(contagemUBS)
+                .map(ubs => ({ nome: ubs, total: contagemUBS[ubs] }))
+                .sort((a, b) => b.total - a.total);
+
+            for(let i=1; i<=3; i++) {
+                document.getElementById(`ubs-nome-${i}`).innerText = "Sem Registros";
+                document.getElementById(`ubs-valor-${i}`).innerText = "0";
+            }
+
+            if(ranking.length > 0) {
+                document.getElementById('ubs-nome-1').innerText = ranking[0].nome;
+                document.getElementById('ubs-valor-1').innerText = ranking[0].total;
+            }
+            if(ranking.length > 1) {
+                document.getElementById('ubs-nome-2').innerText = ranking[1].nome;
+                document.getElementById('ubs-valor-2').innerText = ranking[1].total;
+            }
+            if(ranking.length > 2) {
+                document.getElementById('ubs-nome-3').innerText = ranking[2].nome;
+                document.getElementById('ubs-valor-3').innerText = ranking[2].total;
+            }
+        }
+
+        // ==========================================
+        // NOVA FUNÇÃO: TABELA CONSOLIDADA DE UBS
+        // ==========================================
+        function atualizarTabelaResumoUBS(dados) {
+            const tbody = document.getElementById('corpo-tabela-resumo');
+            tbody.innerHTML = '';
+
+            const dadosAtendidos = dados.filter(item => item.resultado === 'atendido');
+
+            if(dadosAtendidos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Nenhum dado consolidado para este período.</td></tr>';
+                return;
+            }
+
+            // Dicionário para agrupar e somar os dados por UBS
+            const ubsMap = {};
+
+            dadosAtendidos.forEach(item => {
+                const nomeUbs = (item.ubs || "NÃO INFORMADA").toUpperCase();
+                const proc = (item.procedimentos || "").toLowerCase();
+
+                if (!ubsMap[nomeUbs]) {
+                    ubsMap[nomeUbs] = { nome: nomeUbs, total: 0, exames: 0, raiox: 0, curativos: 0 };
+                }
+
+                ubsMap[nomeUbs].total++;
+                if (proc.includes('exame')) ubsMap[nomeUbs].exames++;
+                if (proc.includes('raio-x') || proc.includes('raio x') || proc.includes('raiox')) ubsMap[nomeUbs].raiox++;
+                if (proc.includes('curativo')) ubsMap[nomeUbs].curativos++;
+            });
+
+            // Transforma o dicionário em Array e organiza em ORDEM ALFABÉTICA
+            const ubsArray = Object.values(ubsMap).sort((a, b) => a.nome.localeCompare(b.nome));
+
+            // Desenha a tabela na tela
+            ubsArray.forEach(ubs => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="ubs-badge">${ubs.nome}</span></td>
+                        <td style="text-align: center; font-weight: 800; color: var(--c-navy);">${ubs.total}</td>
+                        <td style="text-align: center; font-weight: 700; color: #0284c7;">${ubs.exames}</td>
+                        <td style="text-align: center; font-weight: 700; color: #ca8a04;">${ubs.raiox}</td>
+                        <td style="text-align: center; font-weight: 700; color: #166534;">${ubs.curativos}</td>
+                    </tr>
+                `;
+            });
+        }
+
+       // TABELA ANTIGA (AGORA DENTRO DA GAVETA)
+       function atualizarTabelaDeFluxo(dados) {
+            const tbody = document.getElementById('corpo-tabela-fluxo');
+            tbody.innerHTML = '';
+            
+            const dadosAtendidos = dados.filter(item => item.resultado === 'atendido');
+            document.getElementById('contador-tabela').innerText = `${dadosAtendidos.length} registros`;
+
+            if(dadosAtendidos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: var(--text-muted);">Nenhum paciente atendido neste período.</td></tr>';
+                return;
+            }
+
+            const dadosOrdenados = [...dadosAtendidos].sort((a, b) => new Date(b.horaAtendimento || b.horaChegada) - new Date(a.horaAtendimento || a.horaChegada));
+
+            dadosOrdenados.forEach(item => {
+                const horaEmissao = formatarHora(item.horaChegada);
+                const tempo = item.tempoEspera || 0;
+                const classTempo = tempo > 30 ? 'time-badge time-alert' : 'time-badge';
+                
+                let htmlStatus = `<span class="status-pill status-atendido"><i class="ph-bold ph-check"></i> Atendido por ${item.atendente || 'Op'}</span>`;
+                const nomeUbs = (item.ubs || "NÃO INFORMADA").toUpperCase();
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color: var(--text-muted); font-weight: 700;"><i class="ph-bold ph-clock" style="margin-right:4px;"></i> ${horaEmissao}</td>
+                        <td><span class="ubs-badge">${nomeUbs}</span></td>
+                        <td>
+                            <div style="font-weight:800; color:var(--c-navy);">${item.ficha}</div>
+                            <div style="font-size:12px; color:var(--text-muted);">${item.setor}</div>
+                        </td>
+                        <td><span class="${classTempo}">${tempo} min</span></td>
+                        <td>${htmlStatus}</td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
